@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -22,8 +23,12 @@ export class IpController {
   }
 
   @Get(':address')
-  findOne(@Param('address') address: string): Promise<IpDocument | null> {
-    return this.ipService.findOne(address);
+  async findOne(@Param('address') address: string): Promise<IpDocument> {
+    const ip = await this.ipService.findOne(address);
+    if (!ip) {
+      throw new NotFoundException(`IP address '${address}' not found`);
+    }
+    return ip;
   }
 
   @Post()
@@ -32,15 +37,23 @@ export class IpController {
   }
 
   @Put(':address')
-  update(
+  async update(
     @Param('address') address: string,
     @Body() updateIpDto: UpdateIpDto,
-  ): Promise<IpDocument | null> {
-    return this.ipService.update(address, updateIpDto);
+  ): Promise<IpDocument> {
+    const ip = await this.ipService.update(address, updateIpDto);
+    if (!ip) {
+      throw new NotFoundException(`IP address '${address}' not found`);
+    }
+    return ip;
   }
 
   @Delete(':address')
-  remove(@Param('address') address: string): Promise<IpDocument | null> {
-    return this.ipService.remove(address);
+  async remove(@Param('address') address: string): Promise<IpDocument> {
+    const ip = await this.ipService.remove(address);
+    if (!ip) {
+      throw new NotFoundException(`IP address '${address}' not found`);
+    }
+    return ip;
   }
 }

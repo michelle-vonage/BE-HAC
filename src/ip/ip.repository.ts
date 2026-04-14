@@ -5,6 +5,16 @@ import { Ip, IpDocument } from './schemas/ip.schema';
 import { CreateIpDto } from './dto/create-ip.dto';
 import { UpdateIpDto } from './dto/update-ip.dto';
 
+const IP_REGEX =
+  /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(([0-9a-fA-F]{1,4}:)*:([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}))$/;
+
+function sanitizeAddress(address: string): string {
+  if (!IP_REGEX.test(address)) {
+    throw new Error(`Invalid IP address: ${address}`);
+  }
+  return address;
+}
+
 @Injectable()
 export class IpRepository {
   constructor(
@@ -16,8 +26,7 @@ export class IpRepository {
   }
 
   async findOne(address: string): Promise<IpDocument | null> {
-    const safeAddress = String(address);
-    return this.ipModel.findOne({ address: safeAddress }).exec();
+    return this.ipModel.findOne({ address: sanitizeAddress(address) }).exec();
   }
 
   async create(dto: CreateIpDto): Promise<IpDocument> {
@@ -26,14 +35,16 @@ export class IpRepository {
   }
 
   async update(address: string, dto: UpdateIpDto): Promise<IpDocument | null> {
-    const safeAddress = String(address);
     return this.ipModel
-      .findOneAndUpdate({ address: safeAddress }, dto, { new: true })
+      .findOneAndUpdate({ address: sanitizeAddress(address) }, dto, {
+        new: true,
+      })
       .exec();
   }
 
   async remove(address: string): Promise<IpDocument | null> {
-    const safeAddress = String(address);
-    return this.ipModel.findOneAndDelete({ address: safeAddress }).exec();
+    return this.ipModel
+      .findOneAndDelete({ address: sanitizeAddress(address) })
+      .exec();
   }
 }
