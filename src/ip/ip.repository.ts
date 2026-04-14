@@ -4,9 +4,7 @@ import { Model } from 'mongoose';
 import { Ip, IpDocument } from './schemas/ip.schema';
 import { CreateIpDto } from './dto/create-ip.dto';
 import { UpdateIpDto } from './dto/update-ip.dto';
-
-const IP_REGEX =
-  /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$|^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(([0-9a-fA-F]{1,4}:)*:([0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}))$/;
+import { IP_REGEX } from '../common/constants';
 
 function sanitizeAddress(address: string): string {
   if (!IP_REGEX.test(address)) {
@@ -30,15 +28,24 @@ export class IpRepository {
   }
 
   async create(dto: CreateIpDto): Promise<IpDocument> {
-    const created = new this.ipModel(dto);
+    const created = new this.ipModel({
+      address: dto.address,
+      description: dto.description,
+    });
     return created.save();
   }
 
   async update(address: string, dto: UpdateIpDto): Promise<IpDocument | null> {
+    const safeFields: { description?: string } = {};
+    if (dto.description !== undefined) {
+      safeFields.description = String(dto.description);
+    }
     return this.ipModel
-      .findOneAndUpdate({ address: sanitizeAddress(address) }, dto, {
-        new: true,
-      })
+      .findOneAndUpdate(
+        { address: sanitizeAddress(address) },
+        { $set: safeFields },
+        { new: true },
+      )
       .exec();
   }
 
